@@ -1,0 +1,38 @@
+{
+  "logo": {
+    "type": "raw",
+    "source": "/home/db/.config/fastfetch/logo-db.txt",
+    "width": 55,
+    "padding": {
+      "top": 0,
+      "left": 1
+    },
+    "position": "left"
+  },
+  "modules": [
+    {
+      "type": "custom",
+      "format": "\n\n"
+    },
+    "title",
+    "os",
+    "kernel",
+    "uptime",
+    "users",
+    "packages",
+    "shell",
+    "terminal",
+    "wm",
+    "display",
+    "cpu",
+    "gpu",
+    "memory",
+    "disk",
+    "battery",
+    {
+      "type": "custom",
+      "format": ""
+    },
+    "colors"
+  ]
+}

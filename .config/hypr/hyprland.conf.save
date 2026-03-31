@@ -1,0 +1,97 @@
+cat ~/.bashrc###########################
+# AUTOSTART PROGRAMS (db) #
+###########################
+exec-once = dunst
+exec-once = blueman-applet
+exec-once = nm-applet
+exec-once = hyprpaper
+exec-once = ironbar
+exec-once = sleep 2 && hyprctl hyprpaper wallpaper ",/home/db/Pictures/wallpapers/db.jpg"
+
+
+
+
+monitor = eDP-1,1920x1080@60,0x0,1.33
+
+
+
+# removed: layerrule = ignorealpha 0.2, ironbar (invalid/outdated rule)
+
+# my config
+$terminal = foot
+
+bind = SUPER, Q, exec,$terminal
+bind = SUPER,RETURN,exec,$terminal
+bind = SUPER, M, exit
+bind = SUPER, R, exec, hyprctl reload
+bind = SUPER SHIFT, Q, exec, kill -9 $(hyprctl activewindow -j | jq '.pid')
+bind = SUPER, SPACE, exec, wofi --show drun --normal-window
+bind = SUPER, S, exec, foot -e nano ~/dbshortcuts.txt
+bind = SUPER, left, movefocus, l
+bind = SUPER, right, movefocus, r
+bind = SUPER, up, movefocus, u
+bind = SUPER, down, movefocus, d
+bind = , Print, exec, grim - | wl-copy
+bind = SHIFT, Print, exec, grim -g "$(slurp)" - | wl-copy
+bind = ALT, TAB, cyclenext
+bind = ALT, TAB, bringactivetotop
+bind = SUPER, F, fullscreen
+bind = SUPER,1,workspace,1
+bind = SUPER,2,workspace,2
+bind = SUPER,3,workspace,3
+bind = SUPER_SHIFT, F, exec, /home/db/bin/dbfloatall
+bind = SUPER, B, exec, /home/db/bin/dbtogglebar
+bindm = SUPER, mouse:272, movewindow
+bindm = SUPER, mouse:273, resizewindow
+
+decoration {
+    rounding = 12
+
+    active_opacity = 0.9
+    inactive_opacity = 0.70
+    fullscreen_opacity = 1.0
+
+    shadow {
+        enabled = true
+        range = 35
+        render_power = 3
+        color = rgba(2087ffcc)
+    }
+
+    blur {
+        enabled = true
+        size = 8
+        passes = 3
+        new_optimizations = true
+    }
+}
+
+animations {
+    enabled = yes
+
+    bezier = db_smooth, 0.05, 0.9, 0.1, 1.0
+    bezier = linear,    0.0, 0.0, 1.0, 1.0
+
+    animation = global, 1, 7, db_smooth
+
+    animation = windows,    1, 6, db_smooth, popin 80%
+    animation = windowsIn,  1, 6, db_smooth, popin 80%
+    animation = windowsOut, 1, 5, db_smooth, popin 80%
+
+    animation = fade,    1, 5, db_smooth
+    animation = fadeIn,  1, 5, db_smooth
+    animation = fadeOut, 1, 5, db_smooth
+
+    animation = border, 1, 4, db_smooth
+
+    animation = workspaces,    1, 6, db_smooth, slide
+    animation = workspacesIn,  1, 6, db_smooth, slide
+    animation = workspacesOut, 1, 6, db_smooth, slide
+}
+
+general {
+    border_size = 3
+    col.active_border = rgba(2087ffcc)
+    col.inactive_border = rgba(2087ffcc)
+}
+

@@ -1,0 +1,19 @@
+* {
+    font-family: "JetBrainsMono Nerd Font", "FiraCode Nerd Font", monospace;
+    font-size: 12px;
+    color: #ffffff;
+}
+
+/* main bar block */
+.background {
+    background-color: rgba(20, 40, 80, 0.45);  /* lighter + more transparent */
+    border-radius: 18px;
+    border: 1px solid rgba(150, 200, 255, 0.55);
+}
+
+/* floating position */
+#bar {
+    margin: 8px 160px;   /* tweak these if you want it wider/narrower */
+    padding: 6px 12px;
+}
+

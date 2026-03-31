@@ -1,0 +1,52 @@
+# Simple centered top bar on all monitors
+
+position = "top"
+height = 32
+
+# Center the bar + give it some side/top margin
+anchor_to_edges = false
+margin.top = 8
+margin.left = 40
+margin.right = 40
+
+# ---------- LEFT SIDE ----------
+# Workspaces + focused window title
+[[start]]
+type = "workspaces"
+all_monitors = false
+
+[[start]]
+type = "focused"
+max_length = 60
+
+# ---------- CENTER ----------
+# Clock in the middle
+# ----------- CENTER -----------
+# Clock in the middle
+[[center]]
+type = "clock"
+format = "%a %b %d %I:%M %p"
+
+# ---------- RIGHT SIDE ----------
+# Basic system info, volume, tray icons
+
+[[end]]
+type = "sys_info"
+format = [
+  "{cpu_percent}% ",
+  "{memory_percent}% ",
+]
+
+[end.interval]
+cpu = 2
+
+[[end]]
+type = "volume"
+
+[[end]]
+type = "battery"
+format = "{percentage}%"
+
+[[end]]
+type = "tray"
+icon_size = 18

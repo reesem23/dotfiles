@@ -1,0 +1,24 @@
+Root(
+  scale: 1.0,
+
+  windows: [
+    Window(
+      name: "topbar",
+      anchor: Top,
+      height: 32,
+
+      widgets: [
+        Workspaces(),
+        Spacer(),
+
+        Clock(format: "%I:%M %p"),
+        Spacer(),
+
+        Cpu(),
+        Memory(),
+        Battery(),
+        Network(),
+      ],
+    ),
+  ],
+)
