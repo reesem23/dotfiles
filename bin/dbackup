@@ -1,0 +1,20 @@
+#!/bin/bash
+
+BACKUP_DIR="$HOME/db-backups"
+TIMESTAMP=$(date +%Y-%m-%d_%I-%M%p)
+ARCHIVE="$BACKUP_DIR/db-configs-$TIMESTAMP.tar.gz"
+
+mkdir -p "$BACKUP_DIR"
+
+tar -czvf "$ARCHIVE" \
+"$HOME/.config" \
+"$HOME/bin" \
+"$HOME/.bashrc" \
+"$HOME/.bash_profile" \
+"$HOME/.bash_aliases" 2>/dev/null
+
+gpg --yes --batch -c "$ARCHIVE"
+rm "$ARCHIVE"
+
+# Keep only the 5 newest encrypted backups
+ls -1t "$BACKUP_DIR"/db-configs-*.tar.gz.gpg 2>/dev/null | tail -n +6 | xargs -r rm --

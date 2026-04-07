@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+
+# Float all windows if any are tiled; tile all if everything is already floating
+any_tiled=$(hyprctl clients -j | jq '[.[] | select(.floating == false)] | length')
+
+if [ "$any_tiled" -gt 0 ]; then
+    hyprctl clients -j | jq -r '.[] | select(.floating == false) | .address' | while read -r addr; do
+        [ -z "$addr" ] && continue
+        hyprctl dispatch togglefloating "address:$addr"
+    done
+else
+    hyprctl clients -j | jq -r '.[] | select(.floating == true) | .address' | while read -r addr; do
+        [ -z "$addr" ] && continue
+        hyprctl dispatch togglefloating "address:$addr"
+    done
+fi

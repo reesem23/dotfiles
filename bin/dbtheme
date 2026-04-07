@@ -1,0 +1,258 @@
+#!/bin/bash
+THEME=$1
+WALLPAPER_DIR="/home/db/Pictures/wallpapers"
+FOOT_CONFIG="/home/db/.config/foot/foot.ini"
+HYPR_CONFIG="/home/db/.config/hypr/hyprland.conf"
+IRONBAR_CSS="/home/db/.config/ironbar/style.css"
+AGS_COLORS="/home/db/.config/ags/colors.css"
+PEACLOCK_CONFIG="/home/db/.peaclock/config"
+
+if [ -z "$THEME" ]; then
+    echo "Available: db, forest, goretex, lain, omarchy, arizona, b, bazzerk, cathedral, cumulonimbus, oilpaint, paint, windows, zenin"
+    exit 1
+fi
+
+apply_wallpaper() {
+    swww img "$1" --transition-type fade --transition-duration 0.2 --transition-fps 60
+}
+
+set_hypr_colors() {
+    sed -i "s/col.active_border = .*/col.active_border = rgba($1)/" "$HYPR_CONFIG"
+    sed -i "s/col.inactive_border = .*/col.inactive_border = rgba($2)/" "$HYPR_CONFIG"
+    sed -i "s/color = rgba(.*/color = rgba($1)/" "$HYPR_CONFIG"
+}
+
+write_foot() {
+    cat > "$FOOT_CONFIG" << FOOTEOF
+[main]
+font=JetBrainsMono Nerd Font:size=11
+[colors-dark]
+background=$BG
+foreground=$FG
+regular0=$R0
+regular1=$R1
+regular2=$R2
+regular3=$R3
+regular4=$R4
+regular5=$R5
+regular6=$R6
+regular7=$R7
+bright0=$B0
+bright1=$B1
+bright2=$B2
+bright3=$B3
+bright4=$B4
+bright5=$B5
+bright6=$B6
+bright7=$B7
+FOOTEOF
+}
+
+write_ironbar() {
+    cat > "$IRONBAR_CSS" << IRONEOF
+* {
+    font-family: "JetBrainsMono Nerd Font", "FiraCode Nerd Font", monospace;
+    font-size: 12px;
+    color: #ffffff;
+    background: transparent;
+    background-color: transparent;
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
+}
+.background {
+    background: $BAR_BG;
+    border-radius: 18px;
+    border: 1px solid $BAR_BORDER;
+}
+#bar {
+    margin: 8px 160px;
+    padding: 6px 12px;
+}
+IRONEOF
+}
+
+write_ags_colors() {
+    cat > "$AGS_COLORS" << AGSEOF
+/* Written by dbtheme — do not edit manually */
+@define-color bar_bg $BAR_BG;
+@define-color bar_border $BAR_BORDER;
+AGSEOF
+}
+
+write_peaclock() {
+    cat > "$PEACLOCK_CONFIG" << PLEOF
+set hour-24 off
+PLEOF
+}
+
+case $THEME in
+    db)
+        WP="$WALLPAPER_DIR/db.jpg"
+        BG=0a0a0f FG=c8d0e0
+        R0=1a1a2e R1=e05a6b R2=4a9eff R3=5bc4f5 R4=2087ff R5=7b6fff R6=40c4ff R7=c8d0e0
+        B0=2a2a4a B1=ff6b7a B2=60aaff B3=70d4ff B4=4aa8ff B5=9d8fff B6=60d4ff B7=eef0f5
+        set_hypr_colors "2087ffcc" "4c566aaa"
+        BAR_BG="rgba(10, 20, 60, 0.55)"
+        BAR_BORDER="rgba(32, 135, 255, 0.65)"
+        PEACLOCK_ACTIVE="#2087ff"
+        PEACLOCK_INACTIVE="#1a1a2e"
+        ;;
+    forest)
+        WP="$WALLPAPER_DIR/forest.png"
+        BG=0a0f0a FG=d0e8c8
+        R0=0f1f0f R1=e06c75 R2=4ec994 R3=e5c07b R4=56b6c2 R5=c678dd R6=4ec994 R7=d0e8c8
+        B0=1a2f1a B1=ff7a85 B2=5ed4a4 B3=f0cb85 B4=66c6cc B5=d688ee B6=5ed4a4 B7=e0f0e0
+        set_hypr_colors "4ec994cc" "1a2f1aaa"
+        BAR_BG="rgba(10, 25, 10, 0.55)"
+        BAR_BORDER="rgba(78, 201, 148, 0.65)"
+        PEACLOCK_ACTIVE="#4ec994"
+        PEACLOCK_INACTIVE="#0f1f0f"
+        ;;
+    goretex)
+        WP="$WALLPAPER_DIR/goretex.jpg"
+        BG=0d1117 FG=d0e8d0
+        R0=1a2a1a R1=e06c75 R2=4ec994 R3=e5c07b R4=56b6c2 R5=c678dd R6=4ec994 R7=d0e8d0
+        B0=2a3a2a B1=ff7a85 B2=5ed4a4 B3=f0cb85 B4=66c6cc B5=d688ee B6=5ed4a4 B7=e0f0e0
+        set_hypr_colors "56b6c2cc" "2a3a2aaa"
+        BAR_BG="rgba(13, 25, 20, 0.55)"
+        BAR_BORDER="rgba(86, 182, 194, 0.65)"
+        PEACLOCK_ACTIVE="#56b6c2"
+        PEACLOCK_INACTIVE="#1a2a1a"
+        ;;
+    lain)
+        WP="$WALLPAPER_DIR/lain.jpg"
+        BG=050508 FG=c8ccd8
+        R0=0f0f18 R1=c45a8a R2=5a7acc R3=8a9ab8 R4=4a6aaa R5=8a5a9a R6=5a8aaa R7=c8ccd8
+        B0=1a1a28 B1=d46a9a B2=6a8adc B3=9aaac8 B4=5a7aba B5=9a6aaa B6=6a9aba B7=d8dce8
+        set_hypr_colors "5a7acccc" "1a1a28aa"
+        BAR_BG="rgba(10, 10, 30, 0.55)"
+        BAR_BORDER="rgba(90, 122, 204, 0.65)"
+        PEACLOCK_ACTIVE="#5a7acc"
+        PEACLOCK_INACTIVE="#0f0f18"
+        ;;
+    omarchy)
+        WP="$WALLPAPER_DIR/omarchy.jpg"
+        BG=0c0c0c FG=d4d4d4
+        R0=1c1c1c R1=cc6666 R2=666666 R3=b5b5b5 R4=888888 R5=999999 R6=aaaaaa R7=d4d4d4
+        B0=2a2a2a B1=dd7777 B2=777777 B3=c5c5c5 B4=999999 B5=aaaaaa B6=bbbbbb B7=e4e4e4
+        set_hypr_colors "888888cc" "333333aa"
+        BAR_BG="rgba(20, 20, 20, 0.55)"
+        BAR_BORDER="rgba(136, 136, 136, 0.65)"
+        PEACLOCK_ACTIVE="#888888"
+        PEACLOCK_INACTIVE="#1c1c1c"
+        ;;
+    arizona)
+        WP="$WALLPAPER_DIR/arizona.JPG"
+        BG=0f0a0e FG=e8d5c8
+        R0=1e1018 R1=c45a6a R2=a06878 R3=d4956a R4=8a5a7a R5=b87a8a R6=c4856a R7=e8d5c8
+        B0=2e1828 B1=d46a7a B2=b07888 B3=e4a57a B4=9a6a8a B5=c88a9a B6=d4957a B7=f0e0d5
+        set_hypr_colors "c45a6acc" "2e1828aa"
+        BAR_BG="rgba(30, 10, 20, 0.55)"
+        BAR_BORDER="rgba(196, 90, 106, 0.65)"
+        PEACLOCK_ACTIVE="#c45a6a"
+        PEACLOCK_INACTIVE="#1e1018"
+        ;;
+    b)
+        WP="$WALLPAPER_DIR/b.JPG"
+        BG=030810 FG=c0d8f0
+        R0=0a1520 R1=4a8ac8 R2=5aaae0 R3=8ab8d8 R4=2a6aaa R5=6a9ac8 R6=7ab8e0 R7=c0d8f0
+        B0=102030 B1=5a9ad8 B2=6abaf0 B3=9ac8e8 B4=3a7aba B5=7aaad8 B6=8ac8f0 B7=d0e8ff
+        set_hypr_colors "5aaae0cc" "102030aa"
+        BAR_BG="rgba(3, 8, 20, 0.55)"
+        BAR_BORDER="rgba(90, 170, 224, 0.65)"
+        PEACLOCK_ACTIVE="#5aaae0"
+        PEACLOCK_INACTIVE="#0a1520"
+        ;;
+    bazzerk)
+        WP="$WALLPAPER_DIR/bazzerk.JPG"
+        BG=050505 FG=b8b8c8
+        R0=101010 R1=884444 R2=446688 R3=667788 R4=335577 R5=664466 R6=447788 R7=b8b8c8
+        B0=1a1a1a B1=994455 B2=5577aa B3=7788aa B4=446688 B5=775577 B6=5588aa B7=d0d0e0
+        set_hypr_colors "446688cc" "1a1a1aaa"
+        BAR_BG="rgba(8, 8, 12, 0.55)"
+        BAR_BORDER="rgba(68, 102, 136, 0.65)"
+        PEACLOCK_ACTIVE="#446688"
+        PEACLOCK_INACTIVE="#101010"
+        ;;
+    cathedral)
+        WP="$WALLPAPER_DIR/cathedral.JPG"
+        BG=080810 FG=c8c0d8
+        R0=14101e R1=8855aa R2=6655cc R3=9977bb R4=5544aa R5=aa66bb R6=7766cc R7=c8c0d8
+        B0=201828 B1=9966bb B2=7766dd B3=aa88cc B4=6655bb B5=bb77cc B6=8877dd B7=d8d0e8
+        set_hypr_colors "6655cccc" "201828aa"
+        BAR_BG="rgba(8, 8, 18, 0.55)"
+        BAR_BORDER="rgba(102, 85, 204, 0.65)"
+        PEACLOCK_ACTIVE="#6655cc"
+        PEACLOCK_INACTIVE="#14101e"
+        ;;
+    cumulonimbus)
+        WP="$WALLPAPER_DIR/cumulonimbus.PNG"
+        BG=0a1018 FG=ddeeff
+        R0=142030 R1=e8a050 R2=60a8e0 R3=f0d060 R4=4090d0 R5=8870c0 R6=50b8e8 R7=ddeeff
+        B0=1e3040 B1=f8b060 B2=70b8f0 B3=ffe070 B4=50a0e0 B5=9880d0 B6=60c8f8 B7=eef5ff
+        set_hypr_colors "60a8e0cc" "1e3040aa"
+        BAR_BG="rgba(10, 18, 30, 0.55)"
+        BAR_BORDER="rgba(96, 168, 224, 0.65)"
+        PEACLOCK_ACTIVE="#60a8e0"
+        PEACLOCK_INACTIVE="#142030"
+        ;;
+    oilpaint)
+        WP="$WALLPAPER_DIR/oilpaint.JPG"
+        BG=0c0a06 FG=e8dcc8
+        R0=1a1508 R1=c8603a R2=a09040 R3=d4a840 R4=886030 R5=b07050 R6=c09850 R7=e8dcc8
+        B0=2a2010 B1=d8704a B2=b0a050 B3=e4b850 B4=987040 B5=c08060 B6=d0a860 B7=f0e8d8
+        set_hypr_colors "d4a840cc" "2a2010aa"
+        BAR_BG="rgba(18, 14, 6, 0.55)"
+        BAR_BORDER="rgba(212, 168, 64, 0.65)"
+        PEACLOCK_ACTIVE="#d4a840"
+        PEACLOCK_INACTIVE="#1a1508"
+        ;;
+    paint)
+        WP="$WALLPAPER_DIR/paint.JPG"
+        BG=060e0c FG=c8e8d8
+        R0=0e1e18 R1=d06868 R2=40a888 R3=80c898 R4=308878 R5=7088a8 R6=40b8a8 R7=c8e8d8
+        B0=182e28 B1=e07878 B2=50b898 B3=90d8a8 B4=409888 B5=8098b8 B6=50c8b8 B7=d8f0e8
+        set_hypr_colors "40a888cc" "182e28aa"
+        BAR_BG="rgba(6, 14, 12, 0.55)"
+        BAR_BORDER="rgba(64, 168, 136, 0.65)"
+        PEACLOCK_ACTIVE="#40a888"
+        PEACLOCK_INACTIVE="#0e1e18"
+        ;;
+    windows)
+        WP="$WALLPAPER_DIR/windows.JPG"
+        BG=04080f FG=d0e8ff
+        R0=0a1428 R1=0078d7 R2=00b4d8 R3=48cae4 R4=0057a8 R5=4a90d9 R6=00cfff R7=d0e8ff
+        B0=102040 B1=1a8ae8 B2=10c4e8 B3=58daf4 B4=1067b8 B5=5aa0e9 B6=10dfff B7=e0f4ff
+        set_hypr_colors "0078d7cc" "102040aa"
+        BAR_BG="rgba(4, 8, 20, 0.55)"
+        BAR_BORDER="rgba(0, 120, 215, 0.65)"
+        PEACLOCK_ACTIVE="#0078d7"
+        PEACLOCK_INACTIVE="#0a1428"
+        ;;
+    zenin)
+        WP="$WALLPAPER_DIR/zenin.JPG"
+        BG=060810 FG=c8cfe0
+        R0=101520 R1=c05a5a R2=5a7890 R3=8a9ab0 R4=4a6880 R5=8a6888 R6=5a8898 R7=c8cfe0
+        B0=182030 B1=d06a6a B2=6a88a0 B3=9aaac0 B4=5a7890 B5=9a7898 B6=6a98a8 B7=d8dff0
+        set_hypr_colors "5a7890cc" "182030aa"
+        BAR_BG="rgba(6, 8, 18, 0.55)"
+        BAR_BORDER="rgba(90, 120, 144, 0.65)"
+        PEACLOCK_ACTIVE="#5a7890"
+        PEACLOCK_INACTIVE="#101520"
+        ;;
+    *)
+        echo "Unknown theme: $THEME"
+        echo "Available: db, forest, goretex, lain, omarchy, arizona, b, bazzerk, cathedral, cumulonimbus, oilpaint, paint, windows, zenin"
+        exit 1
+        ;;
+esac
+
+write_foot
+write_ags_colors
+write_peaclock
+ags quit
+sleep 0.3
+ags run --gtk 3 ~/.config/ags/app.ts &
+apply_wallpaper "$WP"
+echo "Theme '$THEME' applied!"

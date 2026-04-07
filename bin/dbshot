@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+set -e
+
+# Prefer grimblast, then hyprshot, then grim+slurp
+if command -v grimblast >/dev/null 2>&1; then
+  # area -> copied to clipboard + saved (grimblast handles both if configured)
+  grimblast --notify copysave area
+  exit 0
+fi
+
+if command -v hyprshot >/dev/null 2>&1; then
+  hyprshot -m region
+  exit 0
+fi
+
+if command -v grim >/dev/null 2>&1 && command -v slurp >/dev/null 2>&1; then
+  dir="${XDG_PICTURES_DIR:-$HOME/Pictures}/Screenshots"
+  mkdir -p "$dir"
+  file="$dir/$(date +'%Y-%m-%d_%H-%M-%S').png"
+  grim -g "$(slurp)" "$file"
+  exit 0
+fi
+
+notify-send "Screenshot" "No screenshot tool found (grimblast/hyprshot/grim+slurp)."
+exit 1

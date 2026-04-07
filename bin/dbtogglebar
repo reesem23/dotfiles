@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+
+if pgrep -f "ags run" >/dev/null; then
+    ags quit
+else
+    ags run --gtk 3 ~/.config/ags/app.ts &
+fi
