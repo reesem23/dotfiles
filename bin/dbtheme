@@ -3,9 +3,10 @@ THEME=$1
 WALLPAPER_DIR="/home/db/Pictures/wallpapers"
 FOOT_CONFIG="/home/db/.config/foot/foot.ini"
 HYPR_CONFIG="/home/db/.config/hypr/hyprland.conf"
-IRONBAR_CSS="/home/db/.config/ironbar/style.css"
 AGS_COLORS="/home/db/.config/ags/colors.css"
 PEACLOCK_CONFIG="/home/db/.peaclock/config"
+THEME_COLORS="/home/db/.config/theme/colors.css"
+WOFI_CSS="/home/db/.config/wofi/style.css"
 
 if [ -z "$THEME" ]; then
     echo "Available: db, forest, goretex, lain, omarchy, arizona, b, bazzerk, cathedral, cumulonimbus, oilpaint, paint, windows, zenin"
@@ -13,7 +14,7 @@ if [ -z "$THEME" ]; then
 fi
 
 apply_wallpaper() {
-    swww img "$1" --transition-type fade --transition-duration 0.2 --transition-fps 60
+    awww img "$1" --transition-type fade --transition-duration 0.2 --transition-fps 60
 }
 
 set_hypr_colors() {
@@ -72,19 +73,142 @@ write_ironbar() {
 IRONEOF
 }
 
-write_ags_colors() {
-    cat > "$AGS_COLORS" << AGSEOF
+write_global_colors() {
+    mkdir -p "$(dirname "$THEME_COLORS")"
+    local r=$((16#${BG:0:2}))
+    local g=$((16#${BG:2:2}))
+    local b=$((16#${BG:4:2}))
+    local r2=$((r+10 > 255 ? 255 : r+10))
+    local g2=$((g+10 > 255 ? 255 : g+10))
+    local b2=$((b+10 > 255 ? 255 : b+10))
+    cat > "$THEME_COLORS" << COLEOF
 /* Written by dbtheme — do not edit manually */
 @define-color bar_bg $BAR_BG;
 @define-color bar_border $BAR_BORDER;
-AGSEOF
+@define-color accent $PEACLOCK_ACTIVE;
+@define-color fg #$FG;
+@define-color window_bg rgba($r, $g, $b, 0.92);
+@define-color input_bg rgba($r2, $g2, $b2, 0.95);
+COLEOF
+}
+
+write_ags_colors() {
+    printf '@import '"'"'/home/db/.config/theme/colors.css'"'"';\n' > "$AGS_COLORS"
+}
+
+write_wofi() {
+    cat > "$WOFI_CSS" << WOFIEOF
+@import '/home/db/.config/theme/colors.css';
+
+window {
+  margin: 0px;
+  border-radius: 18px;
+  border: 1px solid @bar_border;
+  background-color: @window_bg;
+}
+
+#input {
+  margin: 10px;
+  padding: 8px 12px;
+  border-radius: 12px;
+  border: none;
+  background-color: @input_bg;
+  color: @fg;
+}
+
+#inner-box {
+  margin: 5px 10px 10px 10px;
+}
+
+#entry {
+  padding: 6px 10px;
+  color: @fg;
+}
+
+#entry:selected {
+  background-color: @bar_border;
+  color: #ffffff;
+  border-radius: 10px;
+}
+WOFIEOF
 }
 
 write_peaclock() {
     cat > "$PEACLOCK_CONFIG" << PLEOF
 set hour-24 off
+style active-fg $PEACLOCK_ACTIVE
+style inactive-fg $PEACLOCK_INACTIVE
 PLEOF
 }
+
+extract_auto_colors() {
+    local img=$1
+
+    # Sample 8 horizontal strips and pick the most saturated region as the accent hue
+    local hex
+    hex=$(ffmpeg -i "$img" -vf "scale=8:1:flags=area" -frames:v 1 -f rawvideo -pix_fmt rgb24 - 2>/dev/null \
+          | xxd -p | tr -d '\n')
+
+    local best_sat=0 ar=64 ag=96 ab=200
+    for i in $(seq 0 7); do
+        local off=$((i * 6))
+        local pix="${hex:$off:6}"
+        local pr=$((16#${pix:0:2})) pg=$((16#${pix:2:2})) pb=$((16#${pix:4:2}))
+        local cmax=$(( pr > pg ? (pr > pb ? pr : pb) : (pg > pb ? pg : pb) ))
+        local cmin=$(( pr < pg ? (pr < pb ? pr : pb) : (pg < pb ? pg : pb) ))
+        local sat=$(( cmax - cmin ))
+        if [ $sat -gt $best_sat ]; then
+            best_sat=$sat; ar=$pr; ag=$pg; ab=$pb
+        fi
+    done
+
+    # Normalize accent to peak ~210
+    local pk=$(( ar > ag ? (ar > ab ? ar : ab) : (ag > ab ? ag : ab) ))
+    if [ $pk -gt 0 ]; then
+        ar=$(( ar * 210 / pk )); ag=$(( ag * 210 / pk )); ab=$(( ab * 210 / pk ))
+        [ $ar -gt 255 ] && ar=255; [ $ag -gt 255 ] && ag=255; [ $ab -gt 255 ] && ab=255
+    fi
+
+    # BG: very dark accent-tinted (÷14, min 3)
+    local dr=$(( ar / 14 )) dg=$(( ag / 14 )) db=$(( ab / 14 ))
+    [ $dr -lt 3 ] && dr=3; [ $dg -lt 3 ] && dg=3; [ $db -lt 3 ] && db=3
+
+    # FG: very light accent-tinted (mix 1:5 with white)
+    local lr=$(( (ar + 255*5) / 6 )) lg=$(( (ag + 255*5) / 6 )) lb=$(( (ab + 255*5) / 6 ))
+    [ $lr -gt 255 ] && lr=255; [ $lg -gt 255 ] && lg=255; [ $lb -gt 255 ] && lb=255
+
+    BG=$(printf "%02x%02x%02x" $dr $dg $db)
+    FG=$(printf "%02x%02x%02x" $lr $lg $lb)
+    PEACLOCK_ACTIVE=$(printf "#%02x%02x%02x" $ar $ag $ab)
+    PEACLOCK_INACTIVE=$(printf "#%02x%02x%02x" $(( ar/6 < 1 ? 1 : ar/6 )) $(( ag/6 < 1 ? 1 : ag/6 )) $(( ab/6 < 1 ? 1 : ab/6 )))
+    BAR_BG="rgba($dr, $dg, $db, 0.55)"
+    BAR_BORDER="rgba($ar, $ag, $ab, 0.65)"
+
+    # Terminal palette: accent-tinted hue variants
+    R0="$BG"
+    R1=$(printf "%02x%02x%02x" $(( ar/2+80 > 255 ? 255 : ar/2+80 )) $(( ag/8 )) $(( ab/8 )))
+    R2=$(printf "%02x%02x%02x" $(( ar/8 )) $(( ag/2+80 > 255 ? 255 : ag/2+80 )) $(( ab/8 )))
+    R3=$(printf "%02x%02x%02x" $(( ar/2+40 > 255 ? 255 : ar/2+40 )) $(( ag/2+40 > 255 ? 255 : ag/2+40 )) $(( ab/8 )))
+    R4=$(printf "%02x%02x%02x" $ar $ag $ab)
+    R5=$(printf "%02x%02x%02x" $(( ar/2+60 > 255 ? 255 : ar/2+60 )) $(( ag/8 )) $(( ab/2+60 > 255 ? 255 : ab/2+60 )))
+    R6=$(printf "%02x%02x%02x" $(( ar/8 )) $(( ag/2+40 > 255 ? 255 : ag/2+40 )) $(( ab/2+60 > 255 ? 255 : ab/2+60 )))
+    R7="$FG"
+    B0=$(printf "%02x%02x%02x" $(( dr*2 > 255 ? 255 : dr*2 )) $(( dg*2 > 255 ? 255 : dg*2 )) $(( db*2 > 255 ? 255 : db*2 )))
+    B1=$(printf "%02x%02x%02x" $(( ar/2+120 > 255 ? 255 : ar/2+120 )) $(( ag/6 )) $(( ab/6 )))
+    B2=$(printf "%02x%02x%02x" $(( ar/6 )) $(( ag/2+120 > 255 ? 255 : ag/2+120 )) $(( ab/6 )))
+    B3=$(printf "%02x%02x%02x" $(( ar/2+80 > 255 ? 255 : ar/2+80 )) $(( ag/2+80 > 255 ? 255 : ag/2+80 )) $(( ab/6 )))
+    B4=$(printf "%02x%02x%02x" $(( ar+40 > 255 ? 255 : ar+40 )) $(( ag+40 > 255 ? 255 : ag+40 )) $(( ab+40 > 255 ? 255 : ab+40 )))
+    B5=$(printf "%02x%02x%02x" $(( ar/2+100 > 255 ? 255 : ar/2+100 )) $(( ag/6 )) $(( ab/2+100 > 255 ? 255 : ab/2+100 )))
+    B6=$(printf "%02x%02x%02x" $(( ar/6 )) $(( ag/2+80 > 255 ? 255 : ag/2+80 )) $(( ab/2+100 > 255 ? 255 : ab/2+100 )))
+    B7="$FG"
+
+    set_hypr_colors "$(printf "%02x%02x%02x" $ar $ag $ab)cc" "$(printf "%02x%02x%02x" $((dr+10>255?255:dr+10)) $((dg+10>255?255:dg+10)) $((db+10>255?255:db+10)))aa"
+}
+
+if [ -f "$THEME" ]; then
+    WP="$THEME"
+    extract_auto_colors "$WP"
+else
 
 case $THEME in
     db)
@@ -244,12 +368,17 @@ case $THEME in
     *)
         echo "Unknown theme: $THEME"
         echo "Available: db, forest, goretex, lain, omarchy, arizona, b, bazzerk, cathedral, cumulonimbus, oilpaint, paint, windows, zenin"
+        echo "Or pass a path to any image file to auto-extract colors."
         exit 1
         ;;
 esac
 
+fi # end file-path / named-theme branch
+
 write_foot
+write_global_colors
 write_ags_colors
+write_wofi
 write_peaclock
 ags quit
 sleep 0.3

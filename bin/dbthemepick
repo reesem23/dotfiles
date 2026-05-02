@@ -1,0 +1,238 @@
+#!/usr/bin/env python3
+import gi
+gi.require_version('Gtk', '3.0')
+gi.require_version('GdkPixbuf', '2.0')
+from gi.repository import Gtk, Gdk, GdkPixbuf, GLib
+import os, subprocess, re
+
+WALLPAPER_DIR = os.path.expanduser("~/Pictures/wallpapers")
+CACHE_DIR     = os.path.expanduser("~/.cache/dbtheme/thumbs")
+THEME_CSS     = os.path.expanduser("~/.config/theme/colors.css")
+DBTHEME       = os.path.expanduser("~/bin/dbtheme")
+KNOWN = set("db forest goretex lain omarchy arizona b bazzerk cathedral "
+            "cumulonimbus oilpaint paint windows zenin".split())
+EXTS  = {'.jpg', '.jpeg', '.png', '.webp', '.gif'}
+THUMB_W, THUMB_H = 192, 108
+
+def read_colors():
+    colors = {"bar_border": "rgba(32,135,255,0.65)", "window_bg": "rgba(10,10,20,0.92)",
+              "input_bg": "rgba(20,20,30,0.95)", "fg": "#c8d0e0", "accent": "#2087ff"}
+    try:
+        for line in open(THEME_CSS):
+            m = re.match(r'\s*@define-color\s+(\w+)\s+(.+?)\s*;', line)
+            if m:
+                colors[m.group(1)] = m.group(2)
+    except Exception:
+        pass
+    return colors
+
+def make_thumb(img_path, name):
+    os.makedirs(CACHE_DIR, exist_ok=True)
+    out = os.path.join(CACHE_DIR, name + ".png")
+    if not os.path.exists(out) or os.path.getmtime(img_path) > os.path.getmtime(out):
+        subprocess.run(["ffmpeg", "-y", "-loglevel", "error",
+                        "-i", img_path,
+                        "-vf", f"scale={THUMB_W}:{THUMB_H}:force_original_aspect_ratio=increase,"
+                               f"crop={THUMB_W}:{THUMB_H}",
+                        "-frames:v", "1", out], check=False)
+    return out if os.path.exists(out) else None
+
+def scan_wallpapers():
+    entries = []
+    for f in sorted(os.listdir(WALLPAPER_DIR)):
+        ext = os.path.splitext(f)[1].lower()
+        if ext not in EXTS:
+            continue
+        name = os.path.splitext(f)[0]
+        full = os.path.join(WALLPAPER_DIR, f)
+        entries.append((name, full))
+    return entries
+
+class ThemePicker(Gtk.Window):
+    def __init__(self):
+        super().__init__(title="theme")
+        self.set_type_hint(Gdk.WindowTypeHint.DIALOG)
+        self.set_position(Gtk.WindowPosition.CENTER)
+        self.set_decorated(False)
+        self.set_resizable(False)
+        self.set_keep_above(True)
+
+        colors = read_colors()
+        self._apply_css(colors)
+
+        self.connect("key-press-event", self._on_key)
+        self.connect("destroy", Gtk.main_quit)
+
+        outer = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
+        outer.get_style_context().add_class("picker-outer")
+        self.add(outer)
+
+        # Search bar
+        self.search = Gtk.Entry()
+        self.search.set_placeholder_text("  search themes…")
+        self.search.get_style_context().add_class("picker-search")
+        self.search.connect("changed", self._on_search)
+        outer.pack_start(self.search, False, False, 0)
+
+        # Scrollable grid
+        scroll = Gtk.ScrolledWindow()
+        scroll.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
+        scroll.set_size_request(860, 480)
+        outer.pack_start(scroll, True, True, 0)
+
+        self.flow = Gtk.FlowBox()
+        self.flow.set_max_children_per_line(4)
+        self.flow.set_min_children_per_line(4)
+        self.flow.set_selection_mode(Gtk.SelectionMode.SINGLE)
+        self.flow.set_row_spacing(12)
+        self.flow.set_column_spacing(12)
+        self.flow.get_style_context().add_class("picker-grid")
+        self.flow.connect("child-activated", self._on_activate)
+        scroll.add(self.flow)
+
+        self.cards = []
+        self._load_entries()
+        self.show_all()
+        self.search.grab_focus()
+
+    def _apply_css(self, c):
+        provider = Gtk.CssProvider()
+        provider.load_from_data(f"""
+        .picker-outer {{
+            background: {c['window_bg']};
+            border: 1px solid {c['bar_border']};
+            border-radius: 20px;
+            padding: 14px;
+        }}
+        .picker-search {{
+            background: {c['input_bg']};
+            color: {c['fg']};
+            border: none;
+            border-radius: 12px;
+            padding: 10px 16px;
+            font-family: "JetBrainsMono Nerd Font", monospace;
+            font-size: 13px;
+            margin-bottom: 12px;
+            caret-color: {c['accent']};
+        }}
+        .picker-grid {{
+            background: transparent;
+            padding: 4px;
+        }}
+        .card {{
+            background: rgba(255,255,255,0.04);
+            border-radius: 14px;
+            padding: 8px;
+            border: 1px solid rgba(255,255,255,0.06);
+        }}
+        .card-name {{
+            color: {c['fg']};
+            font-family: "JetBrainsMono Nerd Font", monospace;
+            font-size: 12px;
+            font-weight: bold;
+            margin-top: 6px;
+        }}
+        .card-badge-themed {{
+            color: {c['accent']};
+            font-family: "JetBrainsMono Nerd Font", monospace;
+            font-size: 10px;
+        }}
+        .card-badge-custom {{
+            color: rgba(255,255,255,0.4);
+            font-family: "JetBrainsMono Nerd Font", monospace;
+            font-size: 10px;
+        }}
+        flowboxchild:selected .card {{
+            background: {c['bar_border']};
+            border-color: {c['accent']};
+        }}
+        flowboxchild:selected .card-name {{
+            color: #ffffff;
+        }}
+        """.encode())
+        Gtk.StyleContext.add_provider_for_screen(
+            Gdk.Screen.get_default(), provider,
+            Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
+
+    def _load_entries(self):
+        for child in self.flow.get_children():
+            self.flow.remove(child)
+        self.cards = []
+
+        query = self.search.get_text().lower().strip() if hasattr(self, 'search') else ""
+
+        for name, full_path in scan_wallpapers():
+            if query and query not in name.lower():
+                continue
+
+            thumb_path = make_thumb(full_path, name)
+            is_known = name in KNOWN
+
+            card = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
+            card.get_style_context().add_class("card")
+            card._theme_name = name
+            card._theme_path = full_path
+            card._is_known   = is_known
+
+            # Thumbnail
+            if thumb_path:
+                try:
+                    pb = GdkPixbuf.Pixbuf.new_from_file_at_size(thumb_path, THUMB_W, THUMB_H)
+                    img = Gtk.Image.new_from_pixbuf(pb)
+                    img.set_halign(Gtk.Align.CENTER)
+                    # Rounded corners via overlay trick is complex; just show raw image
+                    card.pack_start(img, False, False, 0)
+                except Exception:
+                    placeholder = Gtk.Label(label="?")
+                    placeholder.set_size_request(THUMB_W, THUMB_H)
+                    card.pack_start(placeholder, False, False, 0)
+            else:
+                placeholder = Gtk.Label(label="no preview")
+                placeholder.set_size_request(THUMB_W, THUMB_H)
+                card.pack_start(placeholder, False, False, 0)
+
+            # Name
+            lbl = Gtk.Label(label=name)
+            lbl.set_halign(Gtk.Align.START)
+            lbl.get_style_context().add_class("card-name")
+            card.pack_start(lbl, False, False, 0)
+
+            # Badge
+            badge = Gtk.Label(label="★ themed" if is_known else "○ custom")
+            badge.set_halign(Gtk.Align.START)
+            badge.get_style_context().add_class("card-badge-themed" if is_known else "card-badge-custom")
+            card.pack_start(badge, False, False, 0)
+
+            self.flow.add(card)
+            self.cards.append(card)
+
+        self.flow.show_all()
+
+    def _on_search(self, entry):
+        self._load_entries()
+
+    def _on_key(self, widget, event):
+        if event.keyval == Gdk.KEY_Escape:
+            Gtk.main_quit()
+        elif event.keyval == Gdk.KEY_Return:
+            sel = self.flow.get_selected_children()
+            if sel:
+                self._activate_child(sel[0])
+
+    def _on_activate(self, flowbox, child):
+        self._activate_child(child)
+
+    def _activate_child(self, child):
+        card = child.get_child()
+        name = card._theme_name
+        is_known = card._is_known
+        self.destroy()
+        Gtk.main_quit()
+        if is_known:
+            subprocess.Popen([DBTHEME, name])
+        else:
+            subprocess.Popen([DBTHEME, card._theme_path])
+
+if __name__ == "__main__":
+    win = ThemePicker()
+    Gtk.main()
